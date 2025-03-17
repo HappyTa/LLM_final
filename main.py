@@ -32,15 +32,13 @@ def model_selector():
 
 def dataset_selector():
     """Ask the user to select a dataset and load it."""
-    available_dataset = {
-        "1": "Fever",
-        "2": "TruthfulQA",
-    }
+    available_dataset = {"1": "Fever", "2": "TruthfulQA", "3": "placeholder"}
 
     print("Available datasets")
-    for key, dataset in available_dataset:
-        print(f"{key}. {dataset}")
+    for key in available_dataset:
+        print(f"{key}: {available_dataset[key]}")
 
+    # Ask for a dataset to use
     choice = input("\nEnter the number of the dataset you want to use: ").strip()
 
     print(f"Loading {available_dataset[choice]}...")
