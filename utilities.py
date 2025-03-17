@@ -1,11 +1,17 @@
 import torch
+import torch.nn.functional as F
+import pandas as pd
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
-    T5ForConditionalGeneration,
 )
+from tqdm import tqdm
+
+
+def get_device():
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 def load_model(model_name):
@@ -19,7 +25,7 @@ def load_model(model_name):
         model: The loaded model.
         tokenizer: The associated tokenizer.
     """
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
 
     # Handle different model types
     if model_name == "google/flan-t5-large":
@@ -45,11 +51,52 @@ def load_model(model_name):
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")
 
-    print(f"✅ Loaded {model_name} on {device}")
+    print(f"Loaded {model_name} on {device}")
     return model, tokenizer
 
 
-def fact_checking_pipeline(model, tokenizer, text):
-    inputs = tokenizer(text, return_tensors="pt").to("cuda")
+def generate_response(model, tokenizer, claim):
+    device = get_device()
+
+    text = f"Is this claim true? {claim}"
+    inputs = tokenizer(text, return_tensors="pt").to(device)
     outputs = model.generate(**inputs, max_length=50)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
+
+
+def fact_checker(roberta_model, roberta_tn, claim, response):
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    input = roberta_tn(claim, response, return_tensors="pt", truncation=True).to(device)
+    output = roberta_model(**input)
+    probs = F.softmax(output.logits, dim=-1)
+
+    labels = ["REFUTES", "NOT ENOUGH INFO", "SUPPORTS"]
+    return labels[torch.argmax(probs)]
+
+
+def evaluation_pipeline(model, tokenizer, dataset):
+    roberta_name = "FacebookAI/roberta-large-mnli"
+    roberta_model, roberta_tn = load_model(roberta_name)
+
+    results = []
+    for data in tqdm(dataset, desc="Fact-Checking"):
+        claim = data["claim"]
+        true_label = data["label"]
+
+        model_response = generate_response(model, tokenizer, claim)
+
+        verdict = fact_checker(roberta_model, roberta_tn, claim, model_response)
+
+        results.append(
+            {
+                "Claim": claim,
+                "LLM_Response": model_response,
+                "Fact-Check Verdict": verdict,
+                "FEVER Label": true_label,
+            }
+        )
+
+    df = pd.DataFrame(results)
+    df.to_csv("fact_check_results.csv", index=False)
+    print("Fact-checking complete! Results saved to fact_check_results.csv")
