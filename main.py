@@ -3,8 +3,7 @@ from datasets import load_dataset
 import sys
 
 
-def model_selector():
-    """Ask the user to select an LLM model and load it."""
+def model_selector(std_in=None):
     available_models = {
         "1": "google/flan-t5-large",
         "2": "meta-llama/llama-2-7b-hf",
@@ -12,12 +11,17 @@ def model_selector():
         "4": "All",
     }
 
-    print("Available Models:")
-    for key, model in available_models.items():
-        print(f"{key}: {model}")
+    if not std_in:
+        """Ask the user to select an LLM model and load it."""
 
-    # Ask user for selection
-    choice = input("\nEnter the number of the model you want to use: ").strip()
+        print("Available Models:")
+        for key, model in available_models.items():
+            print(f"{key}: {model}")
+
+        # Ask user for selection
+        choice = input("\nEnter the number of the model you want to use: ").strip()
+    else:
+        choice = std_in
 
     if choice not in available_models:
         print("Invalid choice. Using default model: google/flan-t5-large")
@@ -61,9 +65,15 @@ def dataset_selector():
 
 
 def main():
+    if len(sys.argv) > 1:
+        if not sys.argv[1].isdigit():
+            raise EnvironmentError(
+                "Please only pass in numerical values for model selection choice"
+            )
+
     # Select model
     # model, tokenizer = model_selector()
-    models_tns = model_selector()
+    models_tns = model_selector(sys.argv[1] if len(sys.argv) > 1 else None)
     # grab datasets
     dataset = dataset_selector()
 
