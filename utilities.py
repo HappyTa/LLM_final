@@ -62,7 +62,7 @@ def generate_response(model, tokenizer, claim):
 
     text = f"Is this claim true? {claim}"
     inputs = tokenizer(text, return_tensors="pt").to(device)
-    outputs = model.generate(**inputs, max_length=50)
+    outputs = model.generate(**inputs, max_new_tokens=60)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 
@@ -103,5 +103,5 @@ def evaluation_pipeline(model, tokenizer, dataset):
 
     model_name = model.config.architectures
     df = pd.DataFrame(results)
-    df.to_csv(f"{model_name}_fact_check_results.csv", index=False)
+    df.to_csv(f"{model_name[0]}_fact_check_results.csv", index=False)
     print("Fact-checking complete! Results saved to fact_check_results.csv")
