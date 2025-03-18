@@ -7,9 +7,9 @@ def model_selector():
     """Ask the user to select an LLM model and load it."""
     available_models = {
         "1": "google/flan-t5-large",
-        "2": "meta-llama/Llama-2-7b-hf",
-        "3": "facebook/roberta-large-mnli",
-        "4": "openai-community/gpt2",
+        "2": "meta-llama/llama-2-7b-hf",
+        "3": "openai-community/gpt2",
+        "4": "All",
     }
 
     print("Available Models:")
@@ -22,12 +22,19 @@ def model_selector():
     if choice not in available_models:
         print("Invalid choice. Using default model: google/flan-t5-large")
         model_name = "google/flan-t5-large"
+    elif choice == "4":
+        rtn_list = []
+        for key in available_models:
+            if key != "4":
+                rtn_list.append(load_model(available_models[key]))
+            else:
+                return rtn_list
     else:
         model_name = available_models[choice]
         print(f"Loading {model_name}...")
 
     # Load the chosen model
-    return load_model(model_name)
+    return [load_model(model_name)]  # type: ignore
 
 
 def dataset_selector():
@@ -55,16 +62,28 @@ def dataset_selector():
 
 def main():
     # Select model
-    model, tokenizer = model_selector()
-
+    # model, tokenizer = model_selector()
+    models_tns = model_selector()
     # grab datasets
     dataset = dataset_selector()
 
-    run_fever = input("Would you like to validates the models on Fever dataset? (y/N)")
+    run_fever = input("Would you like to validates the model(s)? (y/N)")
     if run_fever.lower() == "y":
         # run validation
-        evaluation_pipeline(model, tokenizer, dataset)
-        pass
+        if len(models_tns) > 1:
+            if __debug__:
+                print("mutli-model mode")
+
+            for model, tokenizer in models_tns:
+                evaluation_pipeline(model, tokenizer, dataset)
+        else:
+            if __debug__:
+                print("single-model mode")
+
+            model = models_tns[0][0]
+            tokenizer = models_tns[0][1]
+
+            evaluation_pipeline(model, tokenizer, dataset)
 
     # close program
     sys.exit(0)

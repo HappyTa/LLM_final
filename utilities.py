@@ -34,7 +34,9 @@ def load_model(model_name):
 
     elif model_name == "meta-llama/llama-2-7b-hf":
         model = AutoModelForCausalLM.from_pretrained(
-            model_name, torch_dtype=torch.float16, device_map="auto"
+            model_name,
+            torch_dtype=torch.float16,
+            device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -65,7 +67,7 @@ def generate_response(model, tokenizer, claim):
 
 
 def fact_checker(roberta_model, roberta_tn, claim, response):
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = get_device()
 
     input = roberta_tn(claim, response, return_tensors="pt", truncation=True).to(device)
     output = roberta_model(**input)
@@ -76,6 +78,8 @@ def fact_checker(roberta_model, roberta_tn, claim, response):
 
 
 def evaluation_pipeline(model, tokenizer, dataset):
+    print("Loading roberta-large-mnli to use a judge")
+
     roberta_name = "FacebookAI/roberta-large-mnli"
     roberta_model, roberta_tn = load_model(roberta_name)
 
@@ -97,6 +101,7 @@ def evaluation_pipeline(model, tokenizer, dataset):
             }
         )
 
+    model_name = model.config.architectures
     df = pd.DataFrame(results)
-    df.to_csv("fact_check_results.csv", index=False)
+    df.to_csv(f"{model_name}_fact_check_results.csv", index=False)
     print("Fact-checking complete! Results saved to fact_check_results.csv")
