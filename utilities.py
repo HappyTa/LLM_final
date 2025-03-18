@@ -8,6 +8,7 @@ from transformers import (
     AutoTokenizer,
 )
 from tqdm import tqdm
+import os
 
 
 def get_device():
@@ -69,6 +70,7 @@ def generate_response(model, tokenizer, claim):
 def fact_checker(roberta_model, roberta_tn, claim, response):
     device = get_device()
 
+    # Tokenize
     input = roberta_tn(claim, response, return_tensors="pt", truncation=True).to(device)
     output = roberta_model(**input)
     probs = F.softmax(output.logits, dim=-1)
@@ -85,15 +87,17 @@ def evaluation_pipeline(models_tn, dataset):
 
     results = []
     for model, tokenizer in models_tn:
-        model_name = model.config.architectures[0]
+        model_name = model.config._name_or_path.split("/")[-1]
         print(f"\nEvaluating {model_name}")
 
         for data in tqdm(dataset, desc="Fact-Checking"):
             claim = data["claim"]
             true_label = data["label"]
 
+            # Feed claim to model
             model_response = generate_response(model, tokenizer, claim)
 
+            # Check to see if its true
             verdict = fact_checker(roberta_model, roberta_tn, claim, model_response)
 
             results.append(
@@ -105,7 +109,11 @@ def evaluation_pipeline(models_tn, dataset):
                 }
             )
 
-        file_name = f"{model_name}_fact_check_results.csv"
+        # Create output folders if it does not exist
+        if not os.path.exists("./Evaluation Output"):
+            os.makedirs("./Evaluation Output/")
+
+        file_name = f"./Evaluation Output/{model_name}_fact_check_results.csv"
         df = pd.DataFrame(results)
         df.to_csv(file_name, index=False)
         print(f"Fact-checking complete for {model_name}! Results saved to {file_name}")
