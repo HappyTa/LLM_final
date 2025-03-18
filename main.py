@@ -73,18 +73,11 @@ def main():
         if len(models_tns) > 1:
             if __debug__:
                 print("mutli-model mode")
-
-            for model, tokenizer in models_tns:
-                print(f"\nEvaluating {model.config.architectures}")
-                evaluation_pipeline(model, tokenizer, dataset)
         else:
             if __debug__:
                 print("single-model mode")
 
-            model = models_tns[0][0]
-            tokenizer = models_tns[0][1]
-
-            evaluation_pipeline(model, tokenizer, dataset)
+        evaluation_pipeline(models_tns, dataset)
 
     # close program
     sys.exit(0)

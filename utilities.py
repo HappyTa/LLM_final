@@ -77,31 +77,35 @@ def fact_checker(roberta_model, roberta_tn, claim, response):
     return labels[torch.argmax(probs)]
 
 
-def evaluation_pipeline(model, tokenizer, dataset):
+def evaluation_pipeline(models_tn, dataset):
     print("Loading roberta-large-mnli to use a judge")
 
     roberta_name = "FacebookAI/roberta-large-mnli"
     roberta_model, roberta_tn = load_model(roberta_name)
 
     results = []
-    for data in tqdm(dataset, desc="Fact-Checking"):
-        claim = data["claim"]
-        true_label = data["label"]
+    for model, tokenizer in models_tn:
+        model_name = model.config.architectures[0]
+        print(f"\nEvaluating {model_name}")
 
-        model_response = generate_response(model, tokenizer, claim)
+        for data in tqdm(dataset, desc="Fact-Checking"):
+            claim = data["claim"]
+            true_label = data["label"]
 
-        verdict = fact_checker(roberta_model, roberta_tn, claim, model_response)
+            model_response = generate_response(model, tokenizer, claim)
 
-        results.append(
-            {
-                "Claim": claim,
-                "LLM_Response": model_response,
-                "Fact-Check Verdict": verdict,
-                "FEVER Label": true_label,
-            }
-        )
+            verdict = fact_checker(roberta_model, roberta_tn, claim, model_response)
 
-    model_name = model.config.architectures
-    df = pd.DataFrame(results)
-    df.to_csv(f"{model_name[0]}_fact_check_results.csv", index=False)
-    print("Fact-checking complete! Results saved to fact_check_results.csv")
+            results.append(
+                {
+                    "Claim": claim,
+                    "LLM_Response": model_response,
+                    "Fact-Check Verdict": verdict,
+                    "FEVER Label": true_label,
+                }
+            )
+
+        file_name = f"{model_name}_fact_check_results.csv"
+        df = pd.DataFrame(results)
+        df.to_csv(file_name, index=False)
+        print(f"Fact-checking complete for {model_name}! Results saved to {file_name}")
