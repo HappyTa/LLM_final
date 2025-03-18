@@ -75,6 +75,7 @@ def main():
                 print("mutli-model mode")
 
             for model, tokenizer in models_tns:
+                print(f"\nEvaluating {model.config.architectures}")
                 evaluation_pipeline(model, tokenizer, dataset)
         else:
             if __debug__:
