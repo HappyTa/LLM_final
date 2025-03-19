@@ -180,7 +180,7 @@ def truthful_evaluator(
 
     results = []
 
-    for data in tqdm(dataset, desc=f"\nEvaluating {model_name} on truthful_qa"):
+    for data in tqdm(dataset, desc=f"Evaluating {model_name} on truthful_qa"):
         question = data["question"]
         true_answer = data["best_answer"]
 
@@ -222,7 +222,7 @@ def fever_evaluator(model, tokenizer, model_name, eval_model, eval_tn, dataset):
     """
 
     results = []
-    for data in tqdm(dataset, desc=f"\nEvaluating {model_name} on FEVER"):
+    for data in tqdm(dataset, desc=f"Evaluating {model_name} on FEVER"):
         claim = data["claim"]
         true_label = data["label"]
 
