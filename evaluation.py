@@ -14,7 +14,7 @@ def model_selector(std_in=None):
     if not std_in:
         """Ask the user to select an LLM model and load it."""
 
-        print("Available Models:")
+        print("\n\nAvailable Models:")
         for key, model in available_models.items():
             print(f"{key}: {model}")
 
@@ -46,7 +46,7 @@ def dataset_selector(dataset=None):
     available_dataset = {"1": "Fever", "2": "TruthfulQA"}
 
     if not dataset:
-        print("Available datasets")
+        print("\n\nAvailable datasets")
         for key in available_dataset:
             print(f"{key}: {available_dataset[key]}")
 

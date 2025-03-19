@@ -26,7 +26,7 @@ def load_embedding_model(selected_model=None):
     if not selected_model:
         """Ask the user to select an embedding model and load it."""
 
-        print("Please select an embedding model:")
+        print("\n\nPlease select an embedding model:")
         for key, model in available_models.items():
             print(f"{key}: {model}")
 
@@ -67,7 +67,9 @@ def load_model(model_name):
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-
+        model.config.pad_token_id = (
+            model.config.eos_token_id
+        )  # Suppress warning globally
     elif model_name == "FacebookAI/roberta-large-mnli":
         model = AutoModelForSequenceClassification.from_pretrained(model_name).to(
             device
@@ -77,7 +79,9 @@ def load_model(model_name):
     elif model_name == "openai-community/gpt2":
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-
+        model.config.pad_token_id = (
+            model.config.eos_token_id
+        )  # Suppress warning globally
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")
 
