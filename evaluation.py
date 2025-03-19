@@ -64,7 +64,7 @@ def dataset_selector(dataset=None):
         case "1":
             return (0, load_dataset("fever", "v2.0", split="validation"))
         case "2":
-            return (1, load_dataset("truthful_qa", split="validation"))
+            return (1, load_dataset("truthful_qa", "generation", split="validation"))
         case _:
             print("Invalid choice. Using default dataset: Fever")
             return (0, load_dataset("fever", "v2.0", split="validation"))

@@ -26,12 +26,12 @@ def load_embedding_model(selected_model=None):
     if not selected_model:
         """Ask the user to select an embedding model and load it."""
 
-        print("Available Models:")
+        print("Please select an embedding model:")
         for key, model in available_models.items():
             print(f"{key}: {model}")
 
         # Ask user for selection
-        choice = input("\nEnter the number of the model you want to use: ").strip()
+        choice = input("\nEnter the embedding model you want to use: ").strip()
     else:
         choice = selected_model
 
@@ -155,53 +155,7 @@ def evaluation_pipeline(models_tn, dataset, d_type=0, embed_model=None):
         # Save results
         file_name = f"./evaluation_output/{model_name}_{dataset_name}_results.csv"
         pd.DataFrame(results).to_csv(file_name, index=False)
-        print(f"Evaluation complete for {model_name}! Results saved to {file_name}")
-
-
-# def evaluation_pipeline(models_tn, dataset, d_type=0, embed_model=None):
-#     # Guard clause
-#     if not models_tn or not dataset:
-#         raise ArgumentError("Missing value for models_tn and dataset")
-#
-#     # Load fitting models for selected dataset
-#     if d_type == 0:
-#         print("Loading roberta-large-mnli to use a judge")
-#         eval_model, eval_tn = load_model("FacebookAI/roberta-large-mnli")
-#         dataset_name = "FEVER"
-#     elif d_type == 1:
-#         eval_model, eval_tn = load_embedding_model(embed_model)
-#         dataset_name = "TruthfulQA"
-#     else:
-#         raise ArgumentError(
-#             "Unkown dataset selected, please only pass in valid datasets"
-#         )
-#
-#     for model, tokenizer in models_tn:
-#         model_name = model.config._name_or_path.split("/")[-1]
-#
-#         # Select fitting evaluator base on dataset
-#         if d_type == 0:
-#             results = fever_evaluator(
-#                 model, tokenizer, model_name, eval_model, eval_tn, dataset
-#             )
-#         elif d_type == 1:
-#             results = truthful_evaluator(
-#                 model, tokenizer, model_name, eval_model, dataset
-#             )
-#         else:
-#             raise ArgumentError(
-#                 "Unkown dataset selected, please only pass in valid datasets"
-#             )
-#
-#         # Create output folders if it does not exist
-#         if not os.path.exists("./evaluation_output"):
-#             os.makedirs("./evaluation_output")
-#
-#         file_name = f"./evaluation_output/{model_name}_{dataset_name}_results.csv"
-#         df = pd.DataFrame(results)
-#         df.to_csv(file_name, index=False)
-#         print(f"Evaluation complete for {model_name}! Results saved to {file_name}")
-#
+        print(f"Evaluation complete for {model_name}! Results saved to {file_name}\n")
 
 
 def truthful_evaluator(
@@ -224,7 +178,7 @@ def truthful_evaluator(
 
     results = []
 
-    for data in tqdm(dataset, desc=f"Evaluating {model_name} on truthful_qa"):
+    for data in tqdm(dataset, desc=f"\nEvaluating {model_name} on truthful_qa"):
         question = data["question"]
         true_answer = data["best_answer"]
 
@@ -266,7 +220,7 @@ def fever_evaluator(model, tokenizer, model_name, eval_model, eval_tn, dataset):
     """
 
     results = []
-    for data in tqdm(dataset, desc=f"Evaluating {model_name} on FEVER"):
+    for data in tqdm(dataset, desc=f"\nEvaluating {model_name} on FEVER"):
         claim = data["claim"]
         true_label = data["label"]
 
