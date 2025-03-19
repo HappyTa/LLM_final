@@ -1,4 +1,4 @@
 .python-version
 pyrightconfig.json
 __pycache__
-Evaluation\ Output/*
+evaluation_output/*

@@ -85,10 +85,14 @@ def load_model(model_name):
     return model, tokenizer
 
 
-def generate_response(model, tokenizer, claim):
+def generate_response(model, tokenizer, claim, d_type=0):
     device = get_device()
 
-    text = f"Is this claim true? {claim}"
+    # Does not need to add question when testing with TruthfulQA (1)
+    if d_type == 0:
+        text = f"Is this claim true? {claim}"
+    else:
+        text = {claim}
     inputs = tokenizer(text, return_tensors="pt").to(device)
     outputs = model.generate(**inputs, max_new_tokens=60)
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -185,7 +189,7 @@ def truthful_evaluator(
         true_answer = data["best_answer"]
 
         # Ask model for a response
-        llm_response = generate_response(model, tokenizer, question)
+        llm_response = generate_response(model, tokenizer, question, 1)
 
         # Similarity-based evaluation for TruthfulQA
         similarity = compute_similarity(eval_model, true_answer, llm_response)
