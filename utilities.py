@@ -121,46 +121,109 @@ def compute_similarity(embed_model, reference_answer, generated_answer):
 
 
 def evaluation_pipeline(models_tn, dataset, d_type=0, embed_model=None):
-    if not models_tn or not dataset:
-        raise ArgumentError("Missing value for models_tn and dataset")
+    """Evaluates multiple models on either the FEVER or TruthfulQA dataset."""
 
-    if d_type == 0:
-        print("Loading roberta-large-mnli to use a judge")
-        eval_model, eval_tn = load_model("FacebookAI/roberta-large-mnli")
-        dataset_name = "FEVER"
-    elif d_type == 1:
-        eval_model, eval_tn = load_embedding_model()
-        dataset_name = "TruthfulQA"
-    else:
-        raise ArgumentError(
-            "Unkown dataset selected, please only pass in valid datasets"
+    if not models_tn or not dataset:
+        raise ValueError("Missing value for models_tn and dataset")
+
+    # Select evaluation method based on dataset type
+    dataset_map = {
+        0: ("FEVER", "FacebookAI/roberta-large-mnli", fever_evaluator),
+        1: ("TruthfulQA", embed_model, truthful_evaluator),
+    }
+
+    if d_type not in dataset_map:
+        raise ValueError(
+            "Unknown dataset selected, please pass a valid dataset type (0 or 1)"
         )
 
+    dataset_name, eval_model_name, evaluator = dataset_map[d_type]
+
+    # Load the appropriate evaluation model
+    eval_model, eval_tn = (
+        load_model(eval_model_name)
+        if d_type == 0
+        else load_embedding_model(embed_model)
+    )
+
+    # Ensure output directory exists
+    os.makedirs("./evaluation_output", exist_ok=True)
+
+    # Evaluate each model
     for model, tokenizer in models_tn:
         model_name = model.config._name_or_path.split("/")[-1]
-        print(f"\nEvaluating {model_name}")
+        results = evaluator(model, tokenizer, model_name, eval_model, eval_tn, dataset)
 
-        if d_type == 0:
-            results = fever_evaluator(model, tokenizer, eval_model, eval_tn, dataset)
-        elif d_type == 1:
-            results = truthful_evaluator(model, tokenizer, eval_model, dataset)
-        else:
-            raise ArgumentError(
-                "Unkown dataset selected, please only pass in valid datasets"
-            )
-
-        # Create output folders if it does not exist
-        if not os.path.exists("./evaluation_output"):
-            os.makedirs("./evaluation_output")
-
+        # Save results
         file_name = f"./evaluation_output/{model_name}_{dataset_name}_results.csv"
-        df = pd.DataFrame(results)
-        df.to_csv(file_name, index=False)
+        pd.DataFrame(results).to_csv(file_name, index=False)
         print(f"Evaluation complete for {model_name}! Results saved to {file_name}")
 
 
-def truthful_evaluator(model, tokenizer, eval_model, dataset, similarity_threshold=0.7):
-    model_name = model.config._name_or_path.split("/")[-1]
+# def evaluation_pipeline(models_tn, dataset, d_type=0, embed_model=None):
+#     # Guard clause
+#     if not models_tn or not dataset:
+#         raise ArgumentError("Missing value for models_tn and dataset")
+#
+#     # Load fitting models for selected dataset
+#     if d_type == 0:
+#         print("Loading roberta-large-mnli to use a judge")
+#         eval_model, eval_tn = load_model("FacebookAI/roberta-large-mnli")
+#         dataset_name = "FEVER"
+#     elif d_type == 1:
+#         eval_model, eval_tn = load_embedding_model(embed_model)
+#         dataset_name = "TruthfulQA"
+#     else:
+#         raise ArgumentError(
+#             "Unkown dataset selected, please only pass in valid datasets"
+#         )
+#
+#     for model, tokenizer in models_tn:
+#         model_name = model.config._name_or_path.split("/")[-1]
+#
+#         # Select fitting evaluator base on dataset
+#         if d_type == 0:
+#             results = fever_evaluator(
+#                 model, tokenizer, model_name, eval_model, eval_tn, dataset
+#             )
+#         elif d_type == 1:
+#             results = truthful_evaluator(
+#                 model, tokenizer, model_name, eval_model, dataset
+#             )
+#         else:
+#             raise ArgumentError(
+#                 "Unkown dataset selected, please only pass in valid datasets"
+#             )
+#
+#         # Create output folders if it does not exist
+#         if not os.path.exists("./evaluation_output"):
+#             os.makedirs("./evaluation_output")
+#
+#         file_name = f"./evaluation_output/{model_name}_{dataset_name}_results.csv"
+#         df = pd.DataFrame(results)
+#         df.to_csv(file_name, index=False)
+#         print(f"Evaluation complete for {model_name}! Results saved to {file_name}")
+#
+
+
+def truthful_evaluator(
+    model, tokenizer, model_name, eval_model, eval_tn, dataset, similarity_threshold=0.7
+):
+    """
+    Evaluates a language model on the TruthfulQA dataset using semantic similarity.
+
+    Args:
+        model (PreTrainedModel): The language model to evaluate.
+        tokenizer (PreTrainedTokenizer): Tokenizer for the model.
+        model_name (str): Name of the model
+        eval_model (SentenceTransformer): Model for computing similarity.
+        dataset (list[dict]): List of questions and ground truth answers.
+        similarity_threshold (float, optional): Minimum similarity for correctness (default: 0.7).
+
+    Returns:
+        list[dict]: Evaluation results with question, model response, true answer, and correctness.
+    """
+
     results = []
 
     for data in tqdm(dataset, desc=f"Evaluating {model_name} on truthful_qa"):
@@ -187,9 +250,25 @@ def truthful_evaluator(model, tokenizer, eval_model, dataset, similarity_thresho
     return results
 
 
-def fever_evaluator(model, tokenizer, eval_model, eval_tn, dataset):
+def fever_evaluator(model, tokenizer, model_name, eval_model, eval_tn, dataset):
+    """
+    Evaluates a language model on the FEVER dataset using a fact-checking pipeline.
+
+    Args:
+        model (PreTrainedModel): The language model to evaluate.
+        tokenizer (PreTrainedTokenizer): Tokenizer for the model.
+        model_name (str): Name of the evaluated model.
+        eval_model (Any): Model used for semantic similarity or fact verification.
+        eval_tn (Any): Additional evaluation tool (e.g., retrieval model or external knowledge base).
+        dataset (list[dict]): List of claims with corresponding FEVER labels.
+
+    Returns:
+        list[dict]: Evaluation results including the claim, model response, fact-check verdict,
+        and ground truth FEVER label.
+    """
+
     results = []
-    for data in tqdm(dataset, desc="Fact-Checking"):
+    for data in tqdm(dataset, desc=f"Evaluating {model_name} on FEVER"):
         claim = data["claim"]
         true_label = data["label"]
 
