@@ -92,9 +92,9 @@ def generate_response(model, tokenizer, claim, d_type=0):
     if d_type == 0:
         text = f"Is this claim true? {claim}"
     else:
-        text = {claim}
+        text = claim
         if type(text) is not str:
-            print("FUCK")
+            print(f"{type(text)}: {text}")
 
     inputs = tokenizer(text, return_tensors="pt").to(device)
     outputs = model.generate(**inputs, max_new_tokens=60)
