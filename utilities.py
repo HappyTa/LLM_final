@@ -148,6 +148,8 @@ def evaluation_pipeline(models_tn, dataset, d_type=0, embed_model=None):
     os.makedirs("./evaluation_output", exist_ok=True)
 
     # Evaluate each model
+
+    print("\nStart Evaluation")
     for model, tokenizer in models_tn:
         model_name = model.config._name_or_path.split("/")[-1]
         results = evaluator(model, tokenizer, model_name, eval_model, eval_tn, dataset)

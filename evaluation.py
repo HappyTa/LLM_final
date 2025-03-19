@@ -96,7 +96,6 @@ def main():
         emb_model = None
 
     # run validation
-    print("\nStarting Validation")
     if len(models_tns) > 1 and __debug__:
         print("mutli-model mode")
     elif __debug__:
