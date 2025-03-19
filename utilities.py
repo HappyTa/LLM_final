@@ -60,7 +60,7 @@ def load_model(model_name):
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    elif model_name == "meta-llama/llama-2-7b-hf":
+    elif model_name == "meta-llama/Llama-3.1-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,

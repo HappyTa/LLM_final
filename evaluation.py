@@ -6,7 +6,7 @@ import sys
 def model_selector(std_in=None):
     available_models = {
         "1": "google/flan-t5-large",
-        "2": "meta-llama/llama-2-7b-hf",
+        "2": "meta-llama/Llama-3.1-8B",
         "3": "openai-community/gpt2",
         "4": "All",
     }
