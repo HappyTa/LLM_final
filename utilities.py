@@ -110,8 +110,8 @@ def evaluation_pipeline(models_tn, dataset):
             )
 
         # Create output folders if it does not exist
-        if not os.path.exists("./Evaluation Output"):
-            os.makedirs("./Evaluation Output/")
+        if not os.path.exists("./evaluation_output"):
+            os.makedirs("./evaluation_output")
 
         file_name = f"./Evaluation Output/{model_name}_fact_check_results.csv"
         df = pd.DataFrame(results)
