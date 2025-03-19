@@ -1,4 +1,4 @@
-from utilities import load_model, evaluation_pipeline
+from utilities import load_model, fever_evaluation_pipeline
 from datasets import load_dataset
 import sys
 
@@ -41,27 +41,33 @@ def model_selector(std_in=None):
     return [load_model(model_name)]  # type: ignore
 
 
-def dataset_selector():
+def dataset_selector(dataset=None):
     """Ask the user to select a dataset and load it."""
-    available_dataset = {"1": "Fever", "2": "TruthfulQA", "3": "placeholder"}
+    available_dataset = {"1": "Fever", "2": "TruthfulQA"}
 
-    print("Available datasets")
-    for key in available_dataset:
-        print(f"{key}: {available_dataset[key]}")
+    if not dataset:
+        print("Available datasets")
+        for key in available_dataset:
+            print(f"{key}: {available_dataset[key]}")
 
-    # Ask for a dataset to use
-    choice = input("\nEnter the number of the dataset you want to use: ").strip()
+        # Ask for a dataset to use
+        choice = input("\nEnter the number of the dataset you want to use: ").strip()
+    else:
+        if not dataset.isdigit():
+            raise ValueError("Please only use numerical values for dataset selections.")
+
+        choice = dataset
 
     print(f"Loading {available_dataset[choice]}...")
 
     match choice:
         case "1":
-            return load_dataset("fever", "v2.0", split="validation")
+            return (0, load_dataset("fever", "v2.0", split="validation"))
         case "2":
-            return load_dataset("truthful_qa", split="validation")
+            return (1, load_dataset("truthful_qa", split="validation"))
         case _:
             print("Invalid choice. Using default dataset: Fever")
-            return load_dataset("fever", "v2.0", split="validation")
+            return (0, load_dataset("fever", "v2.0", split="validation"))
 
 
 def main():
@@ -70,24 +76,33 @@ def main():
             raise EnvironmentError(
                 "Please only pass in numerical values for model selection choice"
             )
-
+    elif len(sys.argv) == 3:
+        if not sys.argv[1].isdigit() or sys.argv[2].isdigit():
+            raise EnvironmentError(
+                "Please only pass in numerical values for model selection/datset selection choice"
+            )
     # Select model
-    # model, tokenizer = model_selector()
     models_tns = model_selector(sys.argv[1] if len(sys.argv) > 1 else None)
+
     # grab datasets
-    dataset = dataset_selector()
+    dataset_type, dataset = dataset_selector(
+        sys.argv[2] if len(sys.argv) == 3 else None
+    )
 
-    run_fever = input("Would you like to validates the model(s)? (y/N)")
-    if run_fever.lower() == "y":
-        # run validation
-        if len(models_tns) > 1:
-            if __debug__:
-                print("mutli-model mode")
-        else:
-            if __debug__:
-                print("single-model mode")
+    # If Truthful is being use, check if user passed in a embeded model choice
+    if dataset_type == 1 and len(sys.argv) == 4:
+        emb_model = sys.argv[4]
+    else:
+        emb_model = None
 
-        evaluation_pipeline(models_tns, dataset)
+    # run validation
+    print("\nStarting Validation")
+    if len(models_tns) > 1 and __debug__:
+        print("mutli-model mode")
+    elif __debug__:
+        print("single-model mode")
+
+    fever_evaluation_pipeline(models_tns, dataset, dataset_type, emb_model)
 
     # close program
     sys.exit(0)
