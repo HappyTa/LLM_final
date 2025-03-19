@@ -1,4 +1,4 @@
-from utilities import load_model, fever_evaluation_pipeline
+from utilities import load_model, evaluation_pipeline
 from datasets import load_dataset
 import sys
 
@@ -102,7 +102,7 @@ def main():
     elif __debug__:
         print("single-model mode")
 
-    fever_evaluation_pipeline(models_tns, dataset, dataset_type, emb_model)
+    evaluation_pipeline(models_tns, dataset, dataset_type, emb_model)
 
     # close program
     sys.exit(0)
