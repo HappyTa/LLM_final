@@ -101,7 +101,9 @@ def generate_response(model, tokenizer, claim, d_type=0):
             print(f"{type(text)}: {text}")
 
     inputs = tokenizer(text, return_tensors="pt").to(device)
-    outputs = model.generate(**inputs, max_new_tokens=60)
+    outputs = model.generate(
+        **inputs, max_new_tokens=60, pad_token_id=model.config.eos_token_id
+    )
     return tokenizer.decode(outputs[0], skip_special_tokens=True)
 
 
