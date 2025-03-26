@@ -10,6 +10,7 @@ from transformers import (
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 import os
+from peft import LoraConfig, get_peft_model
 
 
 def get_device():
@@ -42,7 +43,45 @@ def load_embedding_model(selected_model=None):
         return (SentenceTransformer(available_models["1"]), None)
 
 
-def load_model(model_name):
+def model_selector(model_in=None, padding=None):
+    available_models = {
+        "1": "google/flan-t5-large",
+        "2": "meta-llama/Llama-3.1-8B",
+        "3": "openai-community/gpt2",
+        "4": "All",
+    }
+
+    if not model_in:
+        """Ask the user to select an LLM model and load it."""
+
+        print("\n\nAvailable Models:")
+        for key, model in available_models.items():
+            print(f"{key}: {model}")
+
+        # Ask user for selection
+        choice = input("\nPlease select a model you want to use: ").strip()
+    else:
+        choice = model_in
+
+    if choice not in available_models:
+        print("Invalid choice. Using default model: google/flan-t5-large")
+        model_name = "google/flan-t5-large"
+    elif choice == "4":
+        rtn_list = []
+        for key in available_models:
+            if key != "4":
+                rtn_list.append(load_model(available_models[key], padding))
+            else:
+                return rtn_list
+    else:
+        model_name = available_models[choice]
+        print(f"Loading {model_name}...")
+
+    # Load the chosen model
+    return [load_model(model_name, padding)]  # type: ignore
+
+
+def load_model(model_name, padding=None):
     """
     Loads the specified model and its tokenizer.
 
@@ -67,6 +106,9 @@ def load_model(model_name):
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
+        if padding:
+            tokenizer.pad_token = tokenizer.eos_token
+
         model.config.pad_token_id = (
             model.config.eos_token_id
         )  # Suppress warning globally
@@ -87,6 +129,16 @@ def load_model(model_name):
 
     print(f"Loaded {model_name} on {device}")
     return model, tokenizer
+
+
+def load_lora(model, config):
+    config = LoraConfig(
+        r=config["r"],
+        lora_alpha=config["alpha"],
+        lora_dropout=config["dropout"],
+        target_modules=config["target_modules"],
+    )
+    return get_peft_model(model, config)
 
 
 def generate_response(model, tokenizer, claim, d_type=0):

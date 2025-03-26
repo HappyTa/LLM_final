@@ -1,51 +1,13 @@
-from utilities import load_model, evaluation_pipeline
+from utilities import model_selector, evaluation_pipeline
 from datasets import load_dataset
 import sys
 
 
-def model_selector(std_in=None):
-    available_models = {
-        "1": "google/flan-t5-large",
-        "2": "meta-llama/Llama-3.1-8B",
-        "3": "openai-community/gpt2",
-        "4": "All",
-    }
-
-    if not std_in:
-        """Ask the user to select an LLM model and load it."""
-
-        print("\n\nAvailable Models:")
-        for key, model in available_models.items():
-            print(f"{key}: {model}")
-
-        # Ask user for selection
-        choice = input("\nEnter the number of the model you want to use: ").strip()
-    else:
-        choice = std_in
-
-    if choice not in available_models:
-        print("Invalid choice. Using default model: google/flan-t5-large")
-        model_name = "google/flan-t5-large"
-    elif choice == "4":
-        rtn_list = []
-        for key in available_models:
-            if key != "4":
-                rtn_list.append(load_model(available_models[key]))
-            else:
-                return rtn_list
-    else:
-        model_name = available_models[choice]
-        print(f"Loading {model_name}...")
-
-    # Load the chosen model
-    return [load_model(model_name)]  # type: ignore
-
-
-def dataset_selector(dataset=None):
+def dataset_selector(dataset_in=None):
     """Ask the user to select a dataset and load it."""
     available_dataset = {"1": "Fever", "2": "TruthfulQA"}
 
-    if not dataset:
+    if not dataset_in:
         print("\n\nAvailable datasets")
         for key in available_dataset:
             print(f"{key}: {available_dataset[key]}")
@@ -53,10 +15,10 @@ def dataset_selector(dataset=None):
         # Ask for a dataset to use
         choice = input("\nEnter the number of the dataset you want to use: ").strip()
     else:
-        if not dataset.isdigit():
+        if not dataset_in.isdigit():
             raise ValueError("Please only use numerical values for dataset selections.")
 
-        choice = dataset
+        choice = dataset_in
 
     print(f"Loading {available_dataset[choice]}...")
 
@@ -70,7 +32,8 @@ def dataset_selector(dataset=None):
             return (0, load_dataset("fever", "v2.0", split="validation"))
 
 
-def main():
+def evaluate(models_tns=None):
+    # Check for stdin values
     if len(sys.argv) > 1:
         if not sys.argv[1].isdigit():
             raise EnvironmentError(
@@ -82,7 +45,8 @@ def main():
                 "Please only pass in numerical values for model selection/datset selection choice"
             )
     # Select model
-    models_tns = model_selector(sys.argv[1] if len(sys.argv) > 1 else None)
+    if not models_tns:
+        models_tns = model_selector(sys.argv[1] if len(sys.argv) > 1 else None)
 
     # grab datasets
     dataset_type, dataset = dataset_selector(
@@ -108,4 +72,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    evaluate()
