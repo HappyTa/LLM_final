@@ -39,20 +39,15 @@ def fine_tune():
 
     # Training arguments
     training_args = TrainingArguments(
-        output_dir="./lora_finetuned_model",
-        per_device_train_batch_size=1,
-        per_device_eval_batch_size=1,
-        gradient_accumulation_steps=4,
+        output_dir="./results",
+        per_device_train_batch_size=2,  # Keep small to avoid OOM
+        gradient_accumulation_steps=4,  # Simulate larger batch size
+        fp16=True,  # Enables mixed precision training
+        optim="adamw_bnb_8bit",  # Memory-efficient optimizer
+        logging_steps=10,
         evaluation_strategy="steps",
-        save_strategy="steps",
-        logging_dir="./logs",
-        num_train_epochs=3,
         save_steps=500,
-        logging_steps=100,
-        learning_rate=2e-4,
-        weight_decay=0.01,
-        fp16=True,  # Enables mixed precision for faster training
-        push_to_hub=False,
+        report_to="none",
     )
 
     # Define Trainer
