@@ -108,7 +108,7 @@ def model_selector(model_in=None, padding=None):
         print(f"Loading {model_name}...")
 
     # Load the chosen model
-    return [load_model(model_name, padding)]  # type: ignore
+    return [load_model(model_name)]  # type: ignore
 
 
 def load_model(model_name):
@@ -164,16 +164,6 @@ def load_lora(model, config):
         target_modules=config["target_modules"],
     )
     return get_peft_model(model, config)
-
-
-def tokenize_data(tokenizer, examples):
-    return tokenizer(
-        examples["question"],
-        examples["best_answer"],
-        truncation=True,
-        padding="max_length",
-        max_length=512,
-    )
 
 
 def generate_response(model, tokenizer, claim, d_type=0):
