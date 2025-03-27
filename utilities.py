@@ -7,6 +7,7 @@ from transformers import (
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+from datasets import load_dataset
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 import os
@@ -41,6 +42,35 @@ def load_embedding_model(selected_model=None):
     else:
         print("Unkown model selected, defaulting to all-MiniLM-L6-v2")
         return (SentenceTransformer(available_models["1"]), None)
+
+
+def dataset_selector(dataset_in=None):
+    """Ask the user to select a dataset and load it."""
+    available_dataset = {"1": "Fever", "2": "TruthfulQA"}
+
+    if not dataset_in:
+        print("\n\nAvailable datasets")
+        for key in available_dataset:
+            print(f"{key}: {available_dataset[key]}")
+
+        # Ask for a dataset to use
+        choice = input("\nEnter the number of the dataset you want to use: ").strip()
+    else:
+        if not dataset_in.isdigit():
+            raise ValueError("Please only use numerical values for dataset selections.")
+
+        choice = dataset_in
+
+    print(f"Loading {available_dataset[choice]}...")
+
+    match choice:
+        case "1":
+            return (0, load_dataset("fever", "v2.0", split="validation"))
+        case "2":
+            return (1, load_dataset("truthful_qa", "generation", split="validation"))
+        case _:
+            print("Invalid choice. Using default dataset: Fever")
+            return (0, load_dataset("fever", "v2.0", split="validation"))
 
 
 def model_selector(model_in=None, padding=None):
@@ -81,7 +111,7 @@ def model_selector(model_in=None, padding=None):
     return [load_model(model_name, padding)]  # type: ignore
 
 
-def load_model(model_name, padding=None):
+def load_model(model_name):
     """
     Loads the specified model and its tokenizer.
 
@@ -106,12 +136,10 @@ def load_model(model_name, padding=None):
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        if padding:
-            tokenizer.pad_token = tokenizer.eos_token
 
-        model.config.pad_token_id = (
-            model.config.eos_token_id
-        )  # Suppress warning globally
+        # Padding to supress warning
+        tokenizer.pad_token = tokenizer.eos_token
+
     elif model_name == "FacebookAI/roberta-large-mnli":
         model = AutoModelForSequenceClassification.from_pretrained(model_name).to(
             device
@@ -121,9 +149,6 @@ def load_model(model_name, padding=None):
     elif model_name == "openai-community/gpt2":
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model.config.pad_token_id = (
-            model.config.eos_token_id
-        )  # Suppress warning globally
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")
 
@@ -139,6 +164,16 @@ def load_lora(model, config):
         target_modules=config["target_modules"],
     )
     return get_peft_model(model, config)
+
+
+def tokenize_data(tokenizer, examples):
+    return tokenizer(
+        examples["question"],
+        examples["best_answer"],
+        truncation=True,
+        padding="max_length",
+        max_length=512,
+    )
 
 
 def generate_response(model, tokenizer, claim, d_type=0):

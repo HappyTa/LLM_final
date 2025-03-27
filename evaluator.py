@@ -1,35 +1,5 @@
-from utilities import model_selector, evaluation_pipeline
-from datasets import load_dataset
+from utilities import dataset_selector, model_selector, evaluation_pipeline
 import sys
-
-
-def dataset_selector(dataset_in=None):
-    """Ask the user to select a dataset and load it."""
-    available_dataset = {"1": "Fever", "2": "TruthfulQA"}
-
-    if not dataset_in:
-        print("\n\nAvailable datasets")
-        for key in available_dataset:
-            print(f"{key}: {available_dataset[key]}")
-
-        # Ask for a dataset to use
-        choice = input("\nEnter the number of the dataset you want to use: ").strip()
-    else:
-        if not dataset_in.isdigit():
-            raise ValueError("Please only use numerical values for dataset selections.")
-
-        choice = dataset_in
-
-    print(f"Loading {available_dataset[choice]}...")
-
-    match choice:
-        case "1":
-            return (0, load_dataset("fever", "v2.0", split="validation"))
-        case "2":
-            return (1, load_dataset("truthful_qa", "generation", split="validation"))
-        case _:
-            print("Invalid choice. Using default dataset: Fever")
-            return (0, load_dataset("fever", "v2.0", split="validation"))
 
 
 def evaluate(models_tns=None):
