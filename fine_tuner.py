@@ -40,8 +40,9 @@ def fine_tune():
     # Training arguments
     training_args = TrainingArguments(
         output_dir="./lora_finetuned_model",
-        per_device_train_batch_size=4,
-        per_device_eval_batch_size=4,
+        per_device_train_batch_size=1,
+        per_device_eval_batch_size=1,
+        gradient_accumulation_steps=4,
         evaluation_strategy="steps",
         save_strategy="steps",
         logging_dir="./logs",
