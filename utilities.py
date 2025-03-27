@@ -75,7 +75,7 @@ def dataset_selector(dataset_in=None):
 def model_selector(model_in=None, padding=None):
     available_models = {
         "1": "google/flan-t5-large",
-        "2": "meta-llama/Llama-3.1-8B",
+        "2": "meta-llama/Meta-Llama-3-8B",
         "3": "openai-community/gpt2",
         "4": "All",
     }
@@ -128,7 +128,7 @@ def load_model(model_name):
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    elif model_name == "meta-llama/Llama-3.1-8B":
+    elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.float16,
