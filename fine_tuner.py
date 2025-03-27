@@ -1,7 +1,7 @@
-from utilities import dataset_selector, model_selector, load_lora, tokenize_data
+from utilities import dataset_selector, model_selector
 from transformers import TrainingArguments, Trainer
 from datasets import load_dataset
-from peft import LoraConfig, prepare_model_for_kbit_training
+from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model
 from trl import SFTTrainer
 import sys
 
@@ -20,7 +20,7 @@ def fine_tune():
         bias="none",
         task_type="CAUSAL_LM",
     )
-    model = load_lora(model=model, config=lora_config)
+    model = get_peft_model(model=model, peft_config=lora_config)
 
     # load truthful
     dataset = load_dataset("truthful_qa", "generation")

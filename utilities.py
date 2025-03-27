@@ -11,7 +11,6 @@ from datasets import load_dataset
 from sentence_transformers import SentenceTransformer, util
 from tqdm import tqdm
 import os
-from peft import LoraConfig, get_peft_model
 
 
 def get_device():
@@ -100,7 +99,7 @@ def model_selector(model_in=None, padding=None):
         rtn_list = []
         for key in available_models:
             if key != "4":
-                rtn_list.append(load_model(available_models[key], padding))
+                rtn_list.append(load_model(available_models[key]))
             else:
                 return rtn_list
     else:
@@ -154,16 +153,6 @@ def load_model(model_name):
 
     print(f"Loaded {model_name} on {device}")
     return model, tokenizer
-
-
-def load_lora(model, config):
-    config = LoraConfig(
-        r=config["r"],
-        lora_alpha=config["alpha"],
-        lora_dropout=config["dropout"],
-        target_modules=config["target_modules"],
-    )
-    return get_peft_model(model, config)
 
 
 def generate_response(model, tokenizer, claim, d_type=0):
