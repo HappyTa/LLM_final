@@ -24,6 +24,7 @@ def fine_tune():
 
     # load truthful
     dataset = load_dataset("truthful_qa", "generation")
+    dataset = dataset["validation"].train_test_split(test_size=0.2, seed=69)
 
     def tokenize_data(examples):
         return tokenizer(
