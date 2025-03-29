@@ -1,5 +1,6 @@
 import sys
 from evaluator import evaluate
+from fine_tuner import fine_tune
 
 
 def main():
@@ -16,7 +17,7 @@ def main():
         case "1":
             evaluate()
         case "2":
-            pass
+            fine_tune()
         case _:
             raise ValueError(
                 f"Invalid input for mode selection, please pick a number from {keys_l[0]} to {keys_l[-1]}"
