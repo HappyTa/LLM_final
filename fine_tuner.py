@@ -14,8 +14,8 @@ def fine_tune():
 
     # load LoRA
     lora_config = LoraConfig(
-        r=16,  # Rank
-        lora_alpha=32,
+        r=8,  # Rank
+        lora_alpha=16,
         lora_dropout=0.05,
         bias="none",
         task_type="CAUSAL_LM",
