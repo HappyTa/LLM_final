@@ -136,15 +136,12 @@ def process_fever(dataset):
     formatted_data = []
     for item in dataset["train"]:
         claim = item["claim"]
-        evidence = " ".join(
-            [ev[0][2] for ev in item["evidence"] if ev]
-        )  # Extract evidence text
         label = item["label"]
 
         formatted_data.append(
             {
                 "instruction": "Verify the truthfulness of the given claim using the provided evidence.",
-                "input": f"Claim: {claim}\nEvidence: {evidence}",
+                "input": f"Claim: {claim}\nEvidence: No evidence provided",
                 "output": label,  # "SUPPORTS", "REFUTES", or "NOT ENOUGH INFO"
             }
         )
