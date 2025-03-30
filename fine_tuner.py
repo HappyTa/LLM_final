@@ -26,11 +26,13 @@ def tokenize_function(examples, tokenizer):
 
 def fine_tune():
     # load lambda 3.1
-    model, tokenizer = model_selector("2")
+    model_tns = model_selector("2")
+    model = model_tns[0][0]
+    tokenizer = model_tns[0][1]
 
     # load dataset
-    tf_dataset = load_dataset("truthful_qa", "multiple_choice")
-    fe_dataset = load_dataset("fever")
+    tf_dataset = load_dataset("truthful_qa", "generation")
+    fe_dataset = load_dataset("fever", "v2.0", trust_remote_code=True)
 
     # Preprocessing
     tf_dataset = process_truthfulqa(tf_dataset)

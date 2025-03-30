@@ -173,7 +173,7 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            load_in_8b=True,
+            load_in_8bit=True,
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
