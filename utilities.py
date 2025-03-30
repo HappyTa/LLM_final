@@ -6,6 +6,7 @@ from transformers import (
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
+    BitsAndBytesConfig,
 )
 from datasets import load_dataset
 from sentence_transformers import SentenceTransformer, util
@@ -162,6 +163,13 @@ def load_model(model_name):
     """
     device = get_device()
 
+    quantization_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_compute_dtype=torch.float16,
+        bnb_4bit_use_double_quant=True,
+        bnb_4bit_quant_type="nf4",
+    )
+
     # Handle different model types
     if model_name == "google/flan-t5-large":
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
@@ -170,10 +178,10 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            load_in_8bit=True,
+            quantization_config=quantization_config,
             device_map="auto",
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 
         # Padding to supress warning
         tokenizer.pad_token = tokenizer.eos_token

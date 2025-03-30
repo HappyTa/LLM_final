@@ -20,7 +20,6 @@ def tokenize_function(examples, tokenizer):
         padding="max_length",
         max_length=512,
     )
-
     labels = tokenizer(
         examples["output"], truncation=True, padding="max_length", max_length=128
     )
@@ -29,22 +28,25 @@ def tokenize_function(examples, tokenizer):
 
 
 def fine_tune():
-    # load lambda 3.1
-    model_tns = model_selector("2")
-    model = model_tns[0][0]
-    tokenizer = model_tns[0][1]
-
     # load dataset
+    print("\nLoading datasets...")
     tf_dataset = load_dataset("truthful_qa", "generation")
     fe_dataset = load_dataset("fever", "v1.0", trust_remote_code=True)
 
     # Preprocessing
+    print("\nPreprocessing...")
     tf_dataset = process_truthfulqa(tf_dataset)
     fe_dataset = process_fever(fe_dataset)
 
     # Prep final datas
+    print("\nCombine and Tokenize datasets...")
     dataset = Dataset.from_list(tf_dataset + fe_dataset)
     dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
+
+    # load lambda 3
+    model_tns = model_selector("2")
+    model = model_tns[0][0]
+    tokenizer = model_tns[0][1]
 
     # load LoRA
     lora_config = LoraConfig(
