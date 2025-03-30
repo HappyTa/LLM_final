@@ -38,15 +38,15 @@ def fine_tune():
     tf_dataset = process_truthfulqa(tf_dataset)
     fe_dataset = process_fever(fe_dataset)
 
-    # Prep final datas
-    print("\nCombine and Tokenize datasets...")
-    dataset = Dataset.from_list(tf_dataset + fe_dataset)
-    dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
-
     # load lambda 3
     model_tns = model_selector("2")
     model = model_tns[0][0]
     tokenizer = model_tns[0][1]
+
+    # Prep final datas
+    print("\nCombine and Tokenize datasets...")
+    dataset = Dataset.from_list(tf_dataset + fe_dataset)
+    dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
 
     # load LoRA
     lora_config = LoraConfig(
