@@ -1,5 +1,4 @@
 from utilities import (
-    dataset_selector,
     model_selector,
     process_fever,
     process_truthfulqa,
