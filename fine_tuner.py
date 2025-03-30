@@ -11,7 +11,9 @@ import sys
 
 # Tokenization function with tokenizer as a parameter
 def tokenize_function(examples, tokenizer):
-    print(examples["instruction"] + " " + examples["input"])
+    print(type(examples["instruction"]))
+    print(type(examples["input"]))
+
     inputs = tokenizer(
         examples["instruction"] + " " + examples["input"],
         truncation=True,
