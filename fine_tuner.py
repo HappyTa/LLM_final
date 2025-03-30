@@ -11,15 +11,16 @@ import sys
 
 # Tokenization function with tokenizer as a parameter
 def tokenize_function(examples, tokenizer):
-    print(examples["instruction"])
-    print(examples["input"])
-
     inputs = tokenizer(
-        examples["instruction"] + " " + examples["input"],
+        [
+            instr + " " + inp
+            for instr, inp in zip(examples["instruction"], examples["input"])
+        ],
         truncation=True,
         padding="max_length",
         max_length=512,
     )
+
     labels = tokenizer(
         examples["output"], truncation=True, padding="max_length", max_length=128
     )
