@@ -150,13 +150,14 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            device_map="auto",
+            device_map=device,
             torch_dtype=torch.float16,
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
 
         # Padding to supress warning
         tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
 
     elif model_name == "FacebookAI/roberta-large-mnli":
         model = AutoModelForSequenceClassification.from_pretrained(model_name).to(
