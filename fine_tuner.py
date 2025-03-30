@@ -61,7 +61,7 @@ def fine_tune():
     # Training Configuration
     training_args = TrainingArguments(
         output_dir="./llama3-lora-finetuned",
-        per_device_train_batch_size=2,  # Adjust based on memory (A100 can handle 2-4)
+        per_device_train_batch_size=8,  # Adjust based on memory (A100 can handle 2-4)
         gradient_accumulation_steps=16,  # Accumulate gradients to simulate larger batch size
         learning_rate=2e-4,  # LoRA allows higher LR
         num_train_epochs=3,  # Adjust as needed
