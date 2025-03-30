@@ -32,7 +32,7 @@ def fine_tune():
 
     # load dataset
     tf_dataset = load_dataset("truthful_qa", "generation")
-    fe_dataset = load_dataset("fever", "v2.0", trust_remote_code=True)
+    fe_dataset = load_dataset("fever", "v1.0", trust_remote_code=True)
 
     # Preprocessing
     tf_dataset = process_truthfulqa(tf_dataset)
