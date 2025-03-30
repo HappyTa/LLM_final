@@ -123,8 +123,8 @@ def process_truthfulqa(dataset):
 
         formatted_data.append(
             {
-                "instruction": f"Answer the following question truthfully: {question}",
-                "input": " ",
+                "instruction": "Answer the following question truthfully:",
+                "input": f"{question}",
                 "output": response,
             }
         )
