@@ -4,27 +4,25 @@ from utilities import (
     process_truthfulqa,
 )
 from transformers import TrainingArguments, Trainer
-from datasets import load_dataset, Dataset
-from peft import LoraConfig, prepare_model_for_kbit_training, get_peft_model, TaskType
+from datasets import load_dataset, Dataset, concatenate_datasets
+from peft import LoraConfig, TaskType
+from trl import SFTTrainer
 import sys
 
 
-# Tokenization function with tokenizer as a parameter
-def tokenize_function(examples, tokenizer):
-    inputs = tokenizer(
-        [
-            instr + " " + inp
-            for instr, inp in zip(examples["instruction"], examples["input"])
-        ],
-        truncation=True,
-        padding="max_length",
-        max_length=512,
-    )
-    labels = tokenizer(
-        examples["output"], truncation=True, padding="max_length", max_length=128
-    )
-    inputs["labels"] = labels["input_ids"]
-    return inputs
+def prompt_instruction_format(sample):
+    return f"""### Instruction:
+        Use the Task below and the Input given to write the Response:
+
+        ### Task:
+        {sample["instruction"]}
+
+        ### Input:
+        {sample["input"]}
+
+        ### Response:
+        {sample["output"]}
+        """
 
 
 def fine_tune():
@@ -35,96 +33,61 @@ def fine_tune():
 
     # Preprocessing
     print("\nPreprocessing...")
-    tf_dataset = process_truthfulqa(tf_dataset)
-    fe_dataset = process_fever(fe_dataset)
+    tf_dataset = tf_dataset["validation"].map(process_truthfulqa)  # type: ignore
+    fe_dataset = fe_dataset["train"].map(process_fever)  # type: ignore
+
+    dataset = concatenate_datasets([fe_dataset, tf_dataset], axis=0)
+    dataset = dataset.remove_columns(
+        [
+            col
+            for col in dataset.column_names
+            if col not in ["instruction", "input", "output"]
+        ]
+    )
 
     # load lambda 3
     model_tns = model_selector("2")
     model = model_tns[0][0]
     tokenizer = model_tns[0][1]
 
-    # Prep final datas
-    print("\nCombine and Tokenize datasets...")
-    dataset = Dataset.from_list(tf_dataset + fe_dataset)
-    dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
-
     # load LoRA
+    # Define LoRA configuration
     lora_config = LoraConfig(
-        r=32,  # LoRA rank (can be adjusted between 16-64)
-        lora_alpha=64,  # Scaling factor (typically 2x r)
-        target_modules=["q_proj", "v_proj"],  # Apply LoRA to attention layers
-        lora_dropout=0.05,  # Regularization
+        r=64,  # Rank 16 (lower to save memory)
+        lora_alpha=32,  # Scaling factor (typically 2x r)
+        lora_dropout=0.1,  # Regularization
         bias="none",
-        task_type=TaskType.CAUSAL_LM,  # Suitable for text generation
+        task_type=TaskType.CAUSAL_LM,
     )
-    model = get_peft_model(model=model, peft_config=lora_config)
-    model.print_trainable_parameters()  # Verify trainable parameters
 
     # Training Configuration
     training_args = TrainingArguments(
-        output_dir="./llama3-lora-finetuned",
-        per_device_train_batch_size=8,  # Adjust based on memory (A100 can handle 2-4)
-        gradient_accumulation_steps=16,  # Accumulate gradients to simulate larger batch size
-        learning_rate=2e-4,  # LoRA allows higher LR
-        num_train_epochs=3,  # Adjust as needed
-        logging_steps=10,
-        save_steps=100,
-        save_total_limit=2,
-        fp16=True,  # Mixed precision training for efficiency
-        report_to="none",
-        push_to_hub=False,
+        output_dir="./llama3_lora_finetuned",
+        per_device_train_batch_size=4,
+        num_train_epochs=1,
+        learning_rate=2e-4,
+        save_strategy="epoch",
     )
 
     # Trainer
-    trainer = Trainer(
-        model=model, args=training_args, train_dataset=dataset, tokenizer=tokenizer
+    trainer = SFTTrainer(
+        model=model,
+        train_dataset=dataset,
+        peft_config=lora_config,
+        formatting_func=prompt_instruction_format,
+        args=training_args,
     )
 
-    # Start Training
     trainer.train()
+
+    print("Model fine-tuning complete!")
 
     # Save fine-tuned model
     model.save_pretrained("./lora_finetuned_model")
     tokenizer.save_pretrained("./lora_finetuned_model")
-    #
-    # # load truthful
-    # dataset = dataset["validation"].train_test_split(test_size=0.2, seed=69)
-    #
-    # def tokenize_data(examples):
-    #     return tokenizer(
-    #         examples["question"],
-    #         examples["best_answer"],
-    #         truncation=True,
-    #         padding="max_length",
-    #         max_length=512,
-    #     )
-    #
-    # dataset = dataset.map(tokenize_data, batched=True)
-    #
-    # # Training arguments
-    # training_args = TrainingArguments(
-    #     output_dir="./results",
-    #     per_device_train_batch_size=2,  # Keep small to avoid OOM
-    #     gradient_accumulation_steps=4,  # Simulate larger batch size
-    #     fp16=True,  # Enables mixed precision training
-    #     optim="adamw_bnb_8bit",  # Memory-efficient optimizer
-    #     logging_steps=10,
-    #     evaluation_strategy="steps",
-    #     save_steps=500,
-    #     report_to="none",
-    # )
-    #
-    # # Define Trainer
-    # trainer = Trainer(
-    #     model=model,
-    #     args=training_args,
-    #     train_dataset=dataset["train"],
-    #     eval_dataset=dataset["test"],
-    # )
-    #
-    # trainer.train()
-    #
-    #
+
+    print("Model saved successfully!")
+
     sys.exit(0)
 
 

@@ -111,43 +111,22 @@ def model_selector(model_in=None, padding=None):
     return [load_model(model_name)]  # type: ignore
 
 
-def process_truthfulqa(dataset):
-    formatted_data = []
-    for item in dataset["validation"]:
-        question = item["question"]
-        correct_answers = item["best_answer"]
-
-        # Choose the first best answer
-        response = (
-            correct_answers if isinstance(correct_answers, str) else correct_answers[0]
-        )
-
-        formatted_data.append(
-            {
-                "instruction": "Answer the following question truthfully:",
-                "input": f"{question}",
-                "output": response,
-            }
-        )
-
-    return formatted_data
+def process_fever(example):
+    """Convert FEVER dataset into an instruction-following format."""
+    return {
+        "instruction": "Verify these claims. Mark them as 'Supported', 'Refuted', or 'Not Enough Info'",
+        "input": example["claim"],
+        "output": example["label"],  # Labels: "Supported", "Refuted", "Not Enough Info"
+    }
 
 
-def process_fever(dataset):
-    formatted_data = []
-    for item in dataset["train"]:
-        claim = item["claim"]
-        label = item["label"]
-
-        formatted_data.append(
-            {
-                "instruction": "Verify the truthfulness of the given claim using the provided evidence.",
-                "input": f"Claim: {claim}\nEvidence: Not Provided",
-                "output": label,  # "SUPPORTS", "REFUTES", or "NOT ENOUGH INFO"
-            }
-        )
-
-    return formatted_data
+def process_truthfulqa(example):
+    """Convert TruthfulQA into an instruction-following format."""
+    return {
+        "instruction": "Answer the following question truthfully.",
+        "input": example["question"],
+        "output": example["best_answer"],  # Ground truth best answers
+    }
 
 
 def load_model(model_name):
@@ -163,13 +142,6 @@ def load_model(model_name):
     """
     device = get_device()
 
-    quantization_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_compute_dtype=torch.float16,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-    )
-
     # Handle different model types
     if model_name == "google/flan-t5-large":
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
@@ -178,7 +150,6 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            quantization_config=quantization_config,
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
