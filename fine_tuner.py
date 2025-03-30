@@ -67,6 +67,10 @@ def fine_tune():
         num_train_epochs=1,
         learning_rate=2e-4,
         save_strategy="epoch",
+        local_rank=-1,  # For distributed training
+        fp16=True,  # Use mixed precision
+        gradient_checkpointing=True,  # Save memory
+        dataloader_pin_memory=False,
     )
 
     # Trainer
@@ -76,6 +80,7 @@ def fine_tune():
         peft_config=lora_config,
         formatting_func=prompt_instruction_format,
         args=training_args,
+        data_collator=None,
     )
 
     trainer.train()
