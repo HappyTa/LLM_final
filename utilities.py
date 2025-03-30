@@ -110,6 +110,48 @@ def model_selector(model_in=None, padding=None):
     return [load_model(model_name)]  # type: ignore
 
 
+def process_truthfulqa(dataset):
+    formatted_data = []
+    for item in dataset["validation"]:
+        question = item["question"]
+        correct_answers = item["best_answer"]
+
+        # Choose the first best answer
+        response = (
+            correct_answers if isinstance(correct_answers, str) else correct_answers[0]
+        )
+
+        formatted_data.append(
+            {
+                "instruction": f"Answer the following question truthfully: {question}",
+                "input": "",
+                "output": response,
+            }
+        )
+
+    return formatted_data
+
+
+def process_fever(dataset):
+    formatted_data = []
+    for item in dataset["train"]:
+        claim = item["claim"]
+        evidence = " ".join(
+            [ev[0][2] for ev in item["evidence"] if ev]
+        )  # Extract evidence text
+        label = item["label"]
+
+        formatted_data.append(
+            {
+                "instruction": "Verify the truthfulness of the given claim using the provided evidence.",
+                "input": f"Claim: {claim}\nEvidence: {evidence}",
+                "output": label,  # "SUPPORTS", "REFUTES", or "NOT ENOUGH INFO"
+            }
+        )
+
+    return formatted_data
+
+
 def load_model(model_name):
     """
     Loads the specified model and its tokenizer.
@@ -131,7 +173,7 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            torch_dtype=torch.float16,
+            load_in_8b=True,
             device_map="auto",
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name)
