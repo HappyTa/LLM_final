@@ -124,7 +124,7 @@ def process_truthfulqa(dataset):
         formatted_data.append(
             {
                 "instruction": f"Answer the following question truthfully: {question}",
-                "input": "",
+                "input": " ",
                 "output": response,
             }
         )
@@ -141,7 +141,7 @@ def process_fever(dataset):
         formatted_data.append(
             {
                 "instruction": "Verify the truthfulness of the given claim using the provided evidence.",
-                "input": f"Claim: {claim}\nEvidence: No evidence provided",
+                "input": f"Claim: {claim}\nEvidence: Not Provided",
                 "output": label,  # "SUPPORTS", "REFUTES", or "NOT ENOUGH INFO"
             }
         )
