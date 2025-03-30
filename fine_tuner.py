@@ -11,8 +11,8 @@ import sys
 
 # Tokenization function with tokenizer as a parameter
 def tokenize_function(examples, tokenizer):
-    print(type(examples["instruction"]))
-    print(type(examples["input"]))
+    print(examples["instruction"])
+    print(examples["input"])
 
     inputs = tokenizer(
         examples["instruction"] + " " + examples["input"],
@@ -41,7 +41,9 @@ def fine_tune():
     tf_dataset = process_truthfulqa(tf_dataset)
     fe_dataset = process_fever(fe_dataset)
 
+    # Prep final datas
     dataset = Dataset.from_list(tf_dataset + fe_dataset)
+    dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
 
     # load LoRA
     lora_config = LoraConfig(
@@ -54,9 +56,6 @@ def fine_tune():
     )
     model = get_peft_model(model=model, peft_config=lora_config)
     model.print_trainable_parameters()  # Verify trainable parameters
-
-    # tokenize dataset
-    dataset = dataset.map(lambda x: tokenize_function(x, tokenizer), batched=True)
 
     # Training Configuration
     training_args = TrainingArguments(
