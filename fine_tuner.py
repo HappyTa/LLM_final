@@ -3,11 +3,12 @@ from utilities import (
     process_fever,
     process_truthfulqa,
 )
-from transformers import TrainingArguments, Trainer
-from datasets import load_dataset, Dataset, concatenate_datasets
+from transformers import TrainingArguments
+from datasets import load_dataset, concatenate_datasets
 from peft import LoraConfig, TaskType
 from trl import SFTTrainer
 import sys
+import os
 
 
 def prompt_instruction_format(sample):
@@ -67,10 +68,7 @@ def fine_tune():
         num_train_epochs=1,
         learning_rate=2e-4,
         save_strategy="epoch",
-        local_rank=-1,  # For distributed training
         fp16=True,  # Use mixed precision
-        gradient_checkpointing=True,  # Save memory
-        dataloader_pin_memory=False,
     )
 
     # Trainer

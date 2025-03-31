@@ -78,7 +78,8 @@ def model_selector(model_in=None, padding=None):
         "1": "google/flan-t5-large",
         "2": "meta-llama/Meta-Llama-3-8B",
         "3": "openai-community/gpt2",
-        "4": "All",
+        "4": "happymonkey27/llama-3-8b-fine-tuned",
+        "5": "All",
     }
 
     if not model_in:
@@ -96,7 +97,7 @@ def model_selector(model_in=None, padding=None):
     if choice not in available_models:
         print("Invalid choice. Using default model: google/flan-t5-large")
         model_name = "google/flan-t5-large"
-    elif choice == "4":
+    elif choice == "5":
         rtn_list = []
         for key in available_models:
             if key != "4":
@@ -150,7 +151,7 @@ def load_model(model_name):
     elif model_name == "meta-llama/Meta-Llama-3-8B":
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
-            device_map=device,
+            device_map="auto",
             torch_dtype=torch.float16,
         )
         tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
@@ -168,6 +169,9 @@ def load_model(model_name):
     elif model_name == "openai-community/gpt2":
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
+    elif model_name == "happymonkey27/llama-3-8b-fine-tuned":
+        model = AutoModelForCausalLM.from_pretrained("model_name")
+        tokenizer = AutoTokenizer.from_pretrained("model_name")
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")
 
