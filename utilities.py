@@ -170,8 +170,8 @@ def load_model(model_name):
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
     elif model_name == "happymonkey27/llama-3-8b-fine-tuned":
-        model = AutoModelForCausalLM.from_pretrained("model_name")
-        tokenizer = AutoTokenizer.from_pretrained("model_name")
+        model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")
 
