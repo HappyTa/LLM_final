@@ -1,5 +1,7 @@
 # Fine-Tuning LLaMA 3.3 for Fact-Checking and Hallucination Detection in LLMs
 
+You can read about the research by downloading the *Fine-Tuning LLaMA.pdf* file
+
 ### Requirements
 
 - `transformers`
