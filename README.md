@@ -1,15 +1,52 @@
 # Fine-Tuning LLaMA 3.3 for Fact-Checking and Hallucination Detection in LLMs
 
+### Requirements
+
+- `transformers`
+- `datasets`
+- `peft`
+- `accelerate`
+- `bitsandbytes`
+- `torch`
+- `trl`
+
+To instal use:
+
+```cli
+pip install transformers datasets peft accelerate bitsandbytes torch tr
+```
+
+Permission to `meta-llama/Meta-Llama-3-8B`, once you have acquire the permission, please create an access token and use:
+
+```cli
+huggingface-cli login
+```
+
+In order to add the token to your machine. You might night to do `pip install -U "huggingface_hub[cli]"` to install it.
+
+
 ### How to use
 
 ```cli
-python3 evaluation.py [model_number]
+python3 run.py
 ```
 
-- **model_number**: (optional argument) if given this number, the program will skip asking the user for a model to use.
+### Datasets and Models used
 
-- Valid values:
-  1. T5
-  2. LLama
-  3. GPT 2
-  4. All 3 models
+#### Datasets:
+
+- FEVER: https://huggingface.co/datasets/fever/fever
+- TruthfulQA: https://huggingface.co/datasets/truthfulqa/truthful_qa
+
+#### Models
+
+- meta-llama/Meta-Llama-3-8B
+- openai-community/gpt2
+- google/flan-t5-large
+
+
+
+
+
+
+
