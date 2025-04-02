@@ -114,9 +114,17 @@ def model_selector(model_in=None, padding=None):
 
 def process_fever(example):
     """Convert FEVER dataset into an instruction-following format."""
+    evidence_text = example.get(
+        "evidence_wiki_url", ""
+    ).strip()  # Assuming evidence is stored here
+    if not evidence_text:
+        evidence_text = "No evidence provided."  # Handle missing evidence case
+    else:
+        evidence_text = f"https://en.wikipedia.org/wiki/{evidence_text}"
+
     return {
-        "instruction": "Verify these claims. Mark them as 'Supported', 'Refuted', or 'Not Enough Info'",
-        "input": example["claim"],
+        "instruction": "Verify the claim using the evidence given",
+        "input": example["claim"] + f"\nEvidence: {evidence_text}",
         "output": example["label"],  # Labels: "Supported", "Refuted", "Not Enough Info"
     }
 
@@ -164,13 +172,17 @@ def load_model(model_name):
         model = AutoModelForSequenceClassification.from_pretrained(model_name).to(
             device
         )
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name, use_fast=True, trust_remote_code=True
+        )
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
 
     elif model_name == "openai-community/gpt2":
         model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
     elif model_name == "happymonkey27/llama-3-8b-fine-tuned":
-        model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
+        model = AutoModelForCausalLM.from_pretrained(model_name)
         tokenizer = AutoTokenizer.from_pretrained(model_name)
     else:
         raise ValueError(f"Model {model_name} is not supported in this function.")

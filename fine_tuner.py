@@ -30,13 +30,14 @@ def fine_tune():
     # load dataset
     print("\nLoading datasets...")
     tf_dataset = load_dataset("truthful_qa", "generation")
-    fe_dataset = load_dataset("fever", "v1.0", trust_remote_code=True)
+    fe_dataset = load_dataset("fever", "v2.0", trust_remote_code=True)
 
     # Preprocessing
     print("\nPreprocessing...")
     tf_dataset = tf_dataset["validation"].map(process_truthfulqa)  # type: ignore
     fe_dataset = fe_dataset["train"].map(process_fever)  # type: ignore
 
+    # Trying with just fever
     dataset = concatenate_datasets([fe_dataset, tf_dataset], axis=0)
     dataset = dataset.remove_columns(
         [
@@ -45,7 +46,6 @@ def fine_tune():
             if col not in ["instruction", "input", "output"]
         ]
     )
-
     # load lambda 3
     model_tns = model_selector("2")
     model = model_tns[0][0]
@@ -54,9 +54,9 @@ def fine_tune():
     # load LoRA
     # Define LoRA configuration
     lora_config = LoraConfig(
-        r=64,  # Rank 16 (lower to save memory)
-        lora_alpha=32,  # Scaling factor (typically 2x r)
-        lora_dropout=0.1,  # Regularization
+        r=16,
+        lora_alpha=32,
+        lora_dropout=0.1,
         bias="none",
         task_type=TaskType.CAUSAL_LM,
     )
@@ -66,9 +66,8 @@ def fine_tune():
         output_dir="./llama3_lora_finetuned",
         per_device_train_batch_size=4,
         num_train_epochs=1,
-        learning_rate=2e-4,
+        learning_rate=1e-4,
         save_strategy="epoch",
-        fp16=True,  # Use mixed precision
     )
 
     # Trainer
@@ -78,7 +77,6 @@ def fine_tune():
         peft_config=lora_config,
         formatting_func=prompt_instruction_format,
         args=training_args,
-        data_collator=None,
     )
 
     trainer.train()
@@ -89,6 +87,8 @@ def fine_tune():
     model.save_pretrained("./lora_finetuned_model")
     tokenizer.save_pretrained("./lora_finetuned_model")
 
+    model.save_pretrained("./lora_finetuned_model_adapter", save_adapter=True)
+    tokenizer.save_pretrained("./lora_finetuned_model_adapter")
     print("Model saved successfully!")
 
     sys.exit(0)
