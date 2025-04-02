@@ -1,6 +1,6 @@
 # Fine-Tuning LLaMA 3.3 for Fact-Checking and Hallucination Detection in LLMs
 
-You can read about the research by downloading the *Fine-Tuning LLaMA.pdf* file
+You can read about the research by downloading the *Fine-Tuning LLaMA.pdf* file and checkout the presentation using the *LLM_Final_Presentation.pptx*.
 
 ### Requirements
 
